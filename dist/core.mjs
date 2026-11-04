@@ -31,3 +31,26 @@ export async function makeZip(files) {
   const [end,e]=record(22);e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,size,true);e.setUint32(16,offset,true);
   return new Blob([...parts,...directory,end],{type:'application/zip'});
 }
+
+/** Make a portable download prefix without accepting paths or hidden filenames. */
+export function safePrefix(value) {
+  const cleaned = value.normalize('NFC').trim()
+    .replace(/[<>:"/\\|?*\x00-\x1f\x7f]/g, '-')
+    .replace(/^[. ]+|[. ]+$/g, '');
+  const shortened = Array.from(cleaned).slice(0, 80).join('').replace(/[. ]+$/g, '');
+  return /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(shortened)
+    ? `_${shortened}` : shortened;
+}
+
+/** Offset is added to one-based group numbering; zero preserves current numbering. */
+export function validOffset(value) {
+  return Number.isInteger(value) && value >= 0 && value <= 999999999;
+}
+
+/** Keep legacy names when the optional prefix is empty. */
+export function outputFilename(prefix, index, offset, direction) {
+  if (!validOffset(offset)) throw new Error('Choose a whole-number offset from 0 to 999999999.');
+  const number = String(index + 1 + offset).padStart(3, '0');
+  const name = safePrefix(prefix);
+  return name ? `${name}-${number}.png` : `group-${number}-${direction}.png`;
+}

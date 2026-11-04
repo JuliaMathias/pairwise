@@ -8,6 +8,8 @@ A private Sites image utility. The working app lives in `dist/` and runs entirel
 - Natural ascending English filename ordering, case-insensitive: img2 precedes img10. Identical names keep selection order.
 - Choose a whole number of images per group, minimum 2, default 2. The final partial group is included, even if it has one image.
 - Choose vertical or horizontal joining, maintaining input order.
+- Optionally enter a group name used as a common download prefix, and a numbering offset. `Holiday` with offset `10` produces `Holiday-011.png`, `Holiday-012.png`, etc., in both individual downloads and `Holiday.zip`. Blank name preserves legacy `group-001-vertical.png` style; blank offset means zero. Offsets must be whole numbers from 0 through 999999999.
+- A live preview shows the first filename. Names retain Unicode, replace characters unsafe in filenames, strip leading/trailing dots and spaces, avoid reserved device names and are limited to 80 characters. Naming changes clear existing results so regenerate before downloading.
 - Preserve original pixel dimensions without cropping or resizing. Center on the shared axis at integer pixel coordinates; unused canvas stays transparent.
 - Export each group as PNG and offer individual downloads plus a standard uncompressed ZIP. PNG compression already reduces image data, so ZIP needs no additional dependency.
 - Supported input: PNG, JPEG, WebP, GIF, AVIF and BMP if the browser decodes them. Animated input uses its first frame. HEIC and SVG are not accepted.
@@ -46,6 +48,8 @@ Manual testing is needed because canvas decoding and browser downloads cannot be
 6. Enter 0, 1 or a fractional group size. Generation must be disabled. Restore 2 and remove/add a file; grouping must update and old results must disappear.
 7. Try a corrupt PNG and a nonimage. They must be reported and excluded before pairing. Try oversized output; show a group-specific error, preserving successful groups.
 8. Check keyboard focus, narrow layout, both direction states, clear and regeneration.
+9. Enter group name `Holiday` and offset `10`, with the four synthetic inputs grouped by 2. Preview must show `Holiday-011.png`. Generate and download: expect `Holiday-011.png`, `Holiday-012.png` and `Holiday.zip` containing exactly those entries. Verify archive CRCs and compare its first PNG with the individual file.
+10. Enter offset `-1` and then `1.5`: generation must be disabled. Clear both optional fields: expect legacy filename preview starting at 001. Changing names or offset must clear stale results. Restore the example and regenerate.
 
 Pass if ordering, grouping, dimensions, direction and downloaded content match. Record revision, browser, fixture dimensions, output sizes and archive validation; keep private image contents out of project files. Cleanup: delete only synthetic fixtures/downloads if desired; preserve originals.
 
@@ -53,9 +57,11 @@ Pass if ordering, grouping, dimensions, direction and downloaded content match. 
 
 2026-11-04: automated tests and syntax validation passed. Browser tested group-size changes to 3, vertical and horizontal generation, and PNG/ZIP downloads. Synthetic first group dimensions were 20×55 vertical and 45×30 horizontal. Downloaded ZIP contained three PNGs with all CRCs valid; its first PNG matched the individual download. Layout had no horizontal overflow at the observed 596px width. Final whole-pixel centering is covered by automated regression test; browser rendering after that small adjustment is not separately rerun.
 
+Custom naming update (2026-11-04): nine automated tests and syntax checks passed. Browser verified `Holiday` + offset `10`, individual `Holiday-011.png`, bundle `Holiday.zip`, and exactly two archive entries numbered 011 and 012. ZIP CRCs passed and the first entry matched the individual PNG. Negative and fractional offsets disabled generation; blank fields restored the default preview and naming changes cleared stale results. Desktop layout at 1200px had no horizontal overflow. This check used only four synthetic images. The final small `badInput` guard for incomplete numeric input was syntax checked; that browser-specific state was not separately exercised.
+
 Not run: comprehensive keyboard/accessibility audit, other browsers/devices, memory stress test, browser corrupt/oversized-file paths. No CI configured for this small Sites repository.
 
-Delivery plan: implement → automated checks → browser generation/download checks → private Sites publication. No adjustments needed beyond the requested configurable group size: client-side processing satisfies the workflow without remote storage or services. Publication success is recorded by the Sites deployment response. Remaining checks above are limitations, not claims of acceptance.
+Delivery plan: implement → automated checks → browser generation/download checks → private Sites publication. Plan updated for configurable naming and offsets, with focused tests and download acceptance checks; no additional dependencies needed: client-side processing satisfies the workflow without remote storage or services. Publication success is recorded by the Sites deployment response. Remaining checks above are limitations, not claims of acceptance.
 
 ## Publishing and recovery
 
