@@ -12,6 +12,7 @@ A private Sites image utility. The working app lives in `dist/` and runs entirel
 - A live preview shows the first filename. Names retain Unicode, replace characters unsafe in filenames, strip leading/trailing dots and spaces, avoid reserved device names and are limited to 80 characters. Naming changes clear existing results so regenerate before downloading.
 - Preserve original pixel dimensions without cropping or resizing. Center on the shared axis at integer pixel coordinates; unused canvas stays transparent.
 - Export each group as PNG and offer individual downloads plus a standard uncompressed ZIP. PNG compression already reduces image data, so ZIP needs no additional dependency.
+- ZIP entries use the browser-local download time for their modification date, consistently in both ZIP headers. DOS ZIP timestamps have two-second precision and support 1980–2107; out-of-range device dates are clamped. Existing downloaded archives retain their old metadata and must be downloaded again.
 - Supported input: PNG, JPEG, WebP, GIF, AVIF and BMP if the browser decodes them. Animated input uses its first frame. HEIC and SVG are not accepted.
 - Reject files larger than 100 MB or 40 megapixels. Output limits are 16,384 pixels per side and 40 megapixels; excessive groups fail visibly while other groups can succeed. Large collections can still hit device memory limits; use smaller batches.
 
@@ -51,7 +52,9 @@ Manual testing is needed because canvas decoding and browser downloads cannot be
 9. Enter group name `Holiday` and offset `10`, with the four synthetic inputs grouped by 2. Preview must show `Holiday-011.png`. Generate and download: expect `Holiday-011.png`, `Holiday-012.png` and `Holiday.zip` containing exactly those entries. Verify archive CRCs and compare its first PNG with the individual file.
 10. Enter offset `-1` and then `1.5`: generation must be disabled. Clear both optional fields: expect legacy filename preview starting at 001. Changing names or offset must clear stale results. Restore the example and regenerate.
 
-Pass if ordering, grouping, dimensions, direction and downloaded content match. Record revision, browser, fixture dimensions, output sizes and archive validation; keep private image contents out of project files. Cleanup: delete only synthetic fixtures/downloads if desired; preserve originals.
+11. Download a fresh ZIP, note the local download time, and extract it with macOS Archive Utility or `ditto -x -k <archive.zip> <new-empty-folder>`. Inspect the extracted files in Finder or with `stat`: modified dates must match the download time within two seconds and must not show 1980 for a current device clock. Record creation dates too; their handling can vary by extractor/filesystem. Verify file bytes and archive CRCs. Use synthetic data and a fresh extraction directory; preserve old downloads and originals.
+
+Pass if ordering, grouping, dimensions, direction, downloaded content and ZIP modification dates match. Record revision, browser, fixture dimensions, output sizes and archive validation; keep private image contents out of project files. Cleanup: delete only synthetic fixtures/downloads if desired; preserve originals.
 
 ## Current verification and remaining plan
 
@@ -59,9 +62,13 @@ Pass if ordering, grouping, dimensions, direction and downloaded content match. 
 
 Custom naming update (2026-11-04): nine automated tests and syntax checks passed. Browser verified `Holiday` + offset `10`, individual `Holiday-011.png`, bundle `Holiday.zip`, and exactly two archive entries numbered 011 and 012. ZIP CRCs passed and the first entry matched the individual PNG. Negative and fractional offsets disabled generation; blank fields restored the default preview and naming changes cleared stale results. Desktop layout at 1200px had no horizontal overflow. This check used only four synthetic images. The final small `badInput` guard for incomplete numeric input was syntax checked; that browser-specific state was not separately exercised.
 
+ZIP date fix (2026-11-04): removed the hard-coded 1980 date and zero time. Eleven tests passed in each of `TZ=America/Sao_Paulo` and `TZ=UTC`, including every local/central header, odd-second truncation, date-range boundaries and invalid dates. Generated a two-PNG archive with the actual current clock using the same `makeZip` function as the browser. macOS `ditto` extraction produced creation and modified dates of 2026-11-04 18:22:08 BRT; modification times were within two seconds of archive creation. ZIP CRCs passed and extracted files matched the synthetic input bytes. Browser clicks were not repeated for this ZIP-format-only change; browser upload/generation/download behavior was verified in earlier increments. Finder Archive Utility itself and other extractors were not rerun.
+
+Format decision source: [PKWARE APPNOTE 6.3.10, section 4.4.6](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) specifies MS-DOS date/time encoding, a year relative to 1980 and two-second precision. Both headers now receive the same captured local timestamp; the optional date argument permits deterministic tests without changing the normal browser call.
+
 Not run: comprehensive keyboard/accessibility audit, other browsers/devices, memory stress test, browser corrupt/oversized-file paths. No CI configured for this small Sites repository.
 
-Delivery plan: implement → automated checks → browser generation/download checks → private Sites publication. Plan updated for configurable naming and offsets, with focused tests and download acceptance checks; no additional dependencies needed: client-side processing satisfies the workflow without remote storage or services. Publication success is recorded by the Sites deployment response. Remaining checks above are limitations, not claims of acceptance.
+Delivery plan: implement → automated checks → browser generation/download checks → private Sites publication. Plan updated for the ZIP date regression with deterministic header tests and real macOS extraction; configurable naming and grouping remain covered; no additional dependencies needed: client-side processing satisfies the workflow without remote storage or services. Publication success is recorded by the Sites deployment response. Remaining checks above are limitations, not claims of acceptance.
 
 ## Publishing and recovery
 
