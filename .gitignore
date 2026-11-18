@@ -1,0 +1,16 @@
+# Local operating-system and editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+
+# Local dependencies, scratch files and generated archives
+node_modules/
+work/
+outputs/
+*.zip
+*.tar.gz

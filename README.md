@@ -1,6 +1,6 @@
 # Pairwise
 
-A private Sites image utility. The working app lives in `dist/` and runs entirely in the browser. No uploads, backend, database, AI connection, or Lara service is used. Files and generated results disappear when the page reloads; download what you want to keep.
+A browser-local image utility. [Source repository](https://github.com/JuliaMathias/pairwise) · [Hosted Pairwise](https://pairwise-image-joiner-jm.thejuliamathias.chatgpt.site) (ChatGPT sign-in and owner access required). The working app lives in `dist/` and runs entirely in the browser. No uploads, backend, database, AI connection, or Lara service is used. Files and generated results disappear when the page reloads; download what you want to keep.
 
 ## Behavior and decisions
 
@@ -18,7 +18,14 @@ A private Sites image utility. The working app lives in `dist/` and runs entirel
 
 ## Local setup and checks
 
-No dependencies or build step. Use Node.js for tests and Python 3 for a local web server:
+No dependencies or build step. Verification most recently used Node.js 25.4.0; the built-in Node test runner and Python 3 are required for these commands. Clone and enter the repository first:
+
+```sh
+git clone https://github.com/JuliaMathias/pairwise.git
+cd pairwise
+```
+
+Run checks and start a local web server:
 
 ```sh
 node --test tests/core.test.mjs
@@ -66,10 +73,22 @@ ZIP date fix (2026-11-04): removed the hard-coded 1980 date and zero time. Eleve
 
 Format decision source: [PKWARE APPNOTE 6.3.10, section 4.4.6](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) specifies MS-DOS date/time encoding, a year relative to 1980 and two-second precision. Both headers now receive the same captured local timestamp; the optional date argument permits deterministic tests without changing the normal browser call.
 
-Not run: comprehensive keyboard/accessibility audit, other browsers/devices, memory stress test, browser corrupt/oversized-file paths. No CI configured for this small Sites repository.
+Not run: comprehensive keyboard/accessibility audit, other browsers/devices, memory stress test, browser corrupt/oversized-file paths. No CI configured for this repository; local results are not hosted CI evidence.
 
 Delivery plan: implement → automated checks → browser generation/download checks → private Sites publication. Plan updated for the ZIP date regression with deterministic header tests and real macOS extraction; configurable naming and grouping remain covered; no additional dependencies needed: client-side processing satisfies the workflow without remote storage or services. Publication success is recorded by the Sites deployment response. Remaining checks above are limitations, not claims of acceptance.
 
+## GitHub development and review
+
+The initial public import preserves the three original source commits through `730c639`, including configurable grouping, custom download names and the ZIP date fix. The GitHub repository is public; the hosted Site remains owner-private. Source visibility does not change visitor access.
+
+For subsequent changes, create or identify a GitHub issue, then use a `codex/issue-<number>-<description>` branch and open a pull request. Follow `.github/PULL_REQUEST_TEMPLATE.md`. It adapts the review baseline to this buildless browser tool: deterministic Node tests, relevant browser/download checks, no migrations and separate Sites publication. No automatic CI or deployment is configured. Keep synthetic fixtures separate from private images and never commit credentials or downloaded bundles. Use focused commits with a descriptive title and body documenting purpose, validation and limits. Leave merging to the repository owner.
+
+Repository creation policy: squash is the only enabled merge method and merged head branches are automatically deleted. No license has been selected; public availability alone does not grant a reuse license.
+
+Import validation (2026-11-18): all 11 tests passed under both `America/Sao_Paulo` and `UTC` on Node.js 25.4.0; `node --check dist/app.mjs` and `node --check dist/core.mjs` passed. The import does not change application behavior, so browser checks were not repeated. Review of tracked files and history found no image uploads, runtime databases or credential material. The hosting manifest contains a Site identifier, not a credential.
+
+Delivery plan review: import existing source/history → document local setup and review → verify tests and repository settings → push the public repository. No adjustments needed to the application's requirements or architecture because the import adds no runtime behavior. Remaining application validation limits above still apply. Track the import in [issue #1](https://github.com/JuliaMathias/pairwise/issues/1).
+
 ## Publishing and recovery
 
-The Sites skill helper packages `dist/` with the hosting manifest, synchronizes source, then deploys a saved version privately. No runtime migrations or persistent data. Recovery: redeploy a previously saved Sites version; original images are never modified. Source changes should use a dedicated branch and focused commits with explanatory bodies. This is a Sites-managed repository, not a newly created GitHub repository; GitHub issues/PR/CI setup is outside this delivery.
+The Sites skill helper packages `dist/` with the hosting manifest, synchronizes source, then deploys a saved version privately. No runtime migrations or persistent data. Recovery: redeploy a previously saved Sites version; original images are never modified. Source changes should use a dedicated branch and focused commits with explanatory bodies. GitHub and Sites keep separate Git repositories. `origin` points to GitHub in the local checkout. The Sites workflow obtains temporary repository access for the Site ID in `.openai/hosting.json`; keep credentials in memory/stdin and never place them in Git. A GitHub push alone does not publish the Site. When publishing is requested, verify the latest Sites source, reconcile any changes, then use the Sites source/package and saved-version deployment workflow. This GitHub import performs no Sites publication or audience change.
