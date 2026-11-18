@@ -39,7 +39,8 @@ Open http://127.0.0.1:4173. Google Fonts are optional network styling; system fo
 
 - `dist/index.html`: accessible page structure and copy.
 - `dist/style.css`: responsive presentation.
-- `dist/core.mjs`: pure filename grouping, pixel layout, CRC32 and ZIP encoding.
+- `dist/core.mjs`: pure filename grouping, manual ordering, crop-aware composition, CRC32 and ZIP encoding.
+- `dist/composer.mjs`, `dist/collage-layouts.mjs`, `dist/crop.mjs`: shared join/collage geometry, layout ranking, framing gestures and crop validation.
 - `dist/app.mjs`: transient UI state, file decoding, canvas export and Blob URL lifecycle.
 - `tests/core.test.mjs`: deterministic behavioral tests.
 - `.openai/hosting.json`: Sites identity and static deployment configuration.
@@ -92,3 +93,7 @@ Delivery plan review: import existing source/history → document local setup an
 ## Publishing and recovery
 
 The Sites skill helper packages `dist/` with the hosting manifest, synchronizes source, then deploys a saved version privately. No runtime migrations or persistent data. Recovery: redeploy a previously saved Sites version; original images are never modified. Source changes should use a dedicated branch and focused commits with explanatory bodies. GitHub and Sites keep separate Git repositories. `origin` points to GitHub in the local checkout. The Sites workflow obtains temporary repository access for the Site ID in `.openai/hosting.json`; keep credentials in memory/stdin and never place them in Git. A GitHub push alone does not publish the Site. When publishing is requested, verify the latest Sites source, reconcile any changes, then use the Sites source/package and saved-version deployment workflow. This GitHub import performs no Sites publication or audience change.
+
+## Web editing parity
+
+The web editing work is tracked in [issue #2](https://github.com/JuliaMathias/pairwise/issues/2). See [editor parity requirements, architecture and acceptance](docs/editor-parity.md). The geometry increment is independently tested; UI integration and publication are pending until that delivery is verified.
