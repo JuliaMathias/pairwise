@@ -1,6 +1,6 @@
 # Pairwise
 
-A browser-local image utility. [Source repository](https://github.com/JuliaMathias/pairwise) · [Hosted Pairwise](https://pairwise-image-joiner-jm.thejuliamathias.chatgpt.site) (ChatGPT sign-in and owner access required). The working app lives in `dist/` and runs entirely in the browser. No uploads, backend, database, AI connection, or Lara service is used. Files and generated results disappear when the page reloads; download what you want to keep.
+A browser-local image utility. [Source repository](https://github.com/JuliaMathias/pairwise) · [Hosted Pairwise](https://pairwise-image-joiner-jm.thejuliamathias.chatgpt.site) (ChatGPT sign-in and owner access required). The working app lives in `dist/` and runs entirely in the browser. Choose **Join images** for batches, or **Make a collage** for a framed composition of up to nine photos. No uploads, backend, database, AI connection, or Lara service is used. Files and generated results disappear when the page reloads; download what you want to keep.
 
 ## Behavior and decisions
 
@@ -10,9 +10,11 @@ A browser-local image utility. [Source repository](https://github.com/JuliaMathi
 - Choose vertical or horizontal joining, maintaining input order.
 - Optionally enter a group name used as a common download prefix, and a numbering offset. `Holiday` with offset `10` produces `Holiday-011.png`, `Holiday-012.png`, etc., in both individual downloads and `Holiday.zip`. Blank name preserves legacy `group-001-vertical.png` style; blank offset means zero. Offsets must be whole numbers from 0 through 999999999.
 - A live preview shows the first filename. Names retain Unicode, replace characters unsafe in filenames, strip leading/trailing dots and spaces, avoid reserved device names and are limited to 80 characters. Naming changes clear existing results so regenerate before downloading.
-- Preserve original pixel dimensions without cropping or resizing. Center on the shared axis at integer pixel coordinates; unused canvas stays transparent.
+- Join preserves original pixels by default, centering on a transparent background. Optional crop, solid background, proportional resize and colored borders are available, with a live preview and exact output dimensions. Drag the queue grip or use its buttons/arrow keys to reorder, and use Sort by name to restore natural ordering.
 - Export each group as PNG and offer individual downloads plus a standard uncompressed ZIP. PNG compression already reduces image data, so ZIP needs no additional dependency.
 - ZIP entries use the browser-local download time for their modification date, consistently in both ZIP headers. DOS ZIP timestamps have two-second precision and support 1980–2107; out-of-range device dates are clamped. Existing downloaded archives retain their old metadata and must be downloaded again.
+- Collage imports up to nine photos and sets the slot count automatically. Exact-count layouts are ranked for the export shape: 1/2/3 photos have 1/2/4 choices; 4/5/6/7/8/9 photos have 9/10/10/12/14/15 choices each. Select fewer slots to keep extras in the unplaced tray.
+- Six collage exports: square 1080×1080, story 1080×1920, portrait 1080×1350, landscape 1800×1200, widescreen 1920×1080 and tall phone 1080×2340. Photos fill their slots with proportional cover cropping. Drag within a slot to reframe, drag onto another slot to swap, or use Move / swap. Zoom uses a slider or two-pointer pinch; borders set the outside frame and inner spacing.
 - Supported input: PNG, JPEG, WebP, GIF, AVIF and BMP if the browser decodes them. Animated input uses its first frame. HEIC and SVG are not accepted.
 - Reject files larger than 100 MB or 40 megapixels. Output limits are 16,384 pixels per side and 40 megapixels; excessive groups fail visibly while other groups can succeed. Large collections can still hit device memory limits; use smaller batches.
 
@@ -28,25 +30,28 @@ cd pairwise
 Run checks and start a local web server:
 
 ```sh
-node --test tests/core.test.mjs
+node --test tests/*.test.mjs
 node --check dist/app.mjs
 python3 -m http.server 4173 --bind 127.0.0.1 --directory dist
 ```
 
-Open http://127.0.0.1:4173. Google Fonts are optional network styling; system fonts provide fallback. Image processing has no network path.
+Open http://127.0.0.1:4173 and choose a tool. The interface uses system fonts and has no runtime external assets. Image processing has no network path.
 
 ## Structure and ownership
 
 - `dist/index.html`: accessible page structure and copy.
 - `dist/style.css`: responsive presentation.
-- `dist/core.mjs`: pure filename grouping, pixel layout, CRC32 and ZIP encoding.
-- `dist/app.mjs`: transient UI state, file decoding, canvas export and Blob URL lifecycle.
-- `tests/core.test.mjs`: deterministic behavioral tests.
+- `dist/core.mjs`: pure filename grouping, manual ordering, crop-aware composition, CRC32 and ZIP encoding.
+- `dist/composer.mjs`, `dist/collage-layouts.mjs`, `dist/crop.mjs`: shared join/collage geometry, layout ranking, framing gestures and crop validation.
+- `dist/app.mjs`: batch UI, queue, live previews and mode navigation.
+- `dist/collage.mjs`, `dist/crop-editor.mjs`: collage slot/gesture state and modal crop UI.
+- `dist/photos.mjs`: browser decoding, generated synthetic samples, PNG encoding and Blob URL cleanup.
+- `tests/*.test.mjs`: deterministic core, geometry, crop and fake-browser photo-adapter tests.
 - `.openai/hosting.json`: Sites identity and static deployment configuration.
 
 ## Browser acceptance procedure
 
-Manual testing is needed because canvas decoding and browser downloads cannot be established by pure unit tests.
+Manual testing is needed because canvas decoding and browser downloads cannot be established by pure unit tests. For the new editor, use the [web parity procedure](docs/editor-parity.md#manual-acceptance-procedure). The original batch regression steps below start in **Join images**, with Transparent padding and zero borders.
 
 1. Create four synthetic solid-color PNGs: img1 (20×10 red), img2 (10×30 green), img3 (15×15 yellow), img10 (40×20 blue). Select them out of order.
 2. Set group size to 3. Expect img1 + img2 + img3, followed by img10 alone.
@@ -92,3 +97,7 @@ Delivery plan review: import existing source/history → document local setup an
 ## Publishing and recovery
 
 The Sites skill helper packages `dist/` with the hosting manifest, synchronizes source, then deploys a saved version privately. No runtime migrations or persistent data. Recovery: redeploy a previously saved Sites version; original images are never modified. Source changes should use a dedicated branch and focused commits with explanatory bodies. GitHub and Sites keep separate Git repositories. `origin` points to GitHub in the local checkout. The Sites workflow obtains temporary repository access for the Site ID in `.openai/hosting.json`; keep credentials in memory/stdin and never place them in Git. A GitHub push alone does not publish the Site. When publishing is requested, verify the latest Sites source, reconcile any changes, then use the Sites source/package and saved-version deployment workflow. This GitHub import performs no Sites publication or audience change.
+
+## Web editing parity
+
+The web editing work is tracked in [issue #2](https://github.com/JuliaMathias/pairwise/issues/2). See [editor parity requirements, architecture and acceptance](docs/editor-parity.md). The geometry and responsive editor are implemented. Local verification: 22 tests passed, all module syntax checks passed, and real browser checks covered crop/reorder, preview dimensions, PNG/ZIP, collage import limits, swaps, zoom, export and desktop/narrow layouts. The exact evidence and remaining phone checks are in the parity document; publication and review state are tracked in issue #2. No CI is configured.
