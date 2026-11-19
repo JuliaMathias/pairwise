@@ -90,3 +90,9 @@ Record: source SHA, browser and OS/device, viewport, actual action/result, PNG d
 - **Not run:** physical-phone two-finger pinch, phone-native/embedded pickers, other browser engines, complete accessibility audit and large-memory stress. Geometry tests establish pinch calculations but not hardware gesture acceptance. CI is not configured.
 
 Remaining plan review: implementation and local verification are done; source synchronization, private publication and unmerged PR metadata remain the delivery steps. Keep issue #2 open until phone acceptance is recorded. No architecture/dependency changes are needed based on observed browser results.
+
+## Browser preview
+
+This local-browser screenshot contains only the generated sample scenes. It shows the 1280px desktop layout; actual browser/export results are listed above. The phone-width check is separately recorded above, and a screenshot does not establish physical touch acceptance.
+
+![Desktop collage editor with synthetic sample scenes](images/web-collage-preview.png)
