@@ -133,8 +133,12 @@
       <section id="results" aria-labelledby="results-title" hidden>
         <div class="section-top">
           <div><h2 id="results-title" tabindex="-1">Joined images</h2><p class="hint" id="result-summary"></p></div>
-          <button id="bundle" class="button add-secondary">Download ZIP</button>
+          <div class="result-downloads">
+            <button id="save-all" class="button add-primary" aria-describedby="save-all-hint">Save all images</button>
+            <button id="bundle" class="button add-secondary">Download ZIP</button>
+          </div>
         </div>
+        <p id="save-all-hint" class="hint">Save separate PNGs to your usual download folder. Your browser may ask to allow multiple downloads.</p>
         <div id="result-grid"></div>
       </section>
       </div>

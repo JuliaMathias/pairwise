@@ -332,3 +332,12 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
   #back-to-modes { font-size: .8125rem; }
   .actions { padding: 12px 14px max(12px, env(safe-area-inset-bottom)); }
 }
+
+/* Results offer separate native downloads and an archive without crowding narrow screens. */
+.result-downloads { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+#save-all-hint { margin-top: 12px; }
+#results > .section-top { flex-wrap: wrap; }
+@media (max-width: 650px) {
+  .result-downloads { width: 100%; justify-content: flex-start; }
+  .result-downloads .button { flex: 1; min-width: 130px; }
+}

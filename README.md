@@ -11,7 +11,8 @@ A browser-local image utility. [Source repository](https://github.com/JuliaMathi
 - Optionally enter a group name used as a common download prefix, and a numbering offset. `Holiday` with offset `10` produces `Holiday-011.png`, `Holiday-012.png`, etc., in both individual downloads and `Holiday.zip`. Blank name preserves legacy `group-001-vertical.png` style; blank offset means zero. Offsets must be whole numbers from 0 through 999999999.
 - A live preview shows the first filename. Names retain Unicode, replace characters unsafe in filenames, strip leading/trailing dots and spaces, avoid reserved device names and are limited to 80 characters. Naming changes clear existing results so regenerate before downloading.
 - Join preserves original pixels by default, centering on a transparent background. Optional crop, solid background, proportional resize and colored borders are available, with a live preview and exact output dimensions. Drag the queue grip or use its buttons/arrow keys to reorder, and use Sort by name to restore natural ordering.
-- Export each group as PNG and offer individual downloads plus a standard uncompressed ZIP. PNG compression already reduces image data, so ZIP needs no additional dependency.
+- Export each group as PNG, with individual downloads, **Save all images** for separate PNG downloads, and a standard uncompressed ZIP. Save all preserves the same names, numbering and bytes, requests files in output order, and disables editing/repeated batch clicks until requests finish. PNG compression already reduces image data, so ZIP needs no additional dependency.
+- Separate downloads use the browser's normal destination (usually Downloads). Browser settings can prompt for each file or block additional automatic downloads; allow multiple downloads for Pairwise if needed. The page reports requests, not confirmed filesystem saves. It cannot select a folder or override browser permission. ZIP remains a reliable single-download alternative. See [Chrome's official download settings](https://support.google.com/chrome/answer/95759).
 - ZIP entries use the browser-local download time for their modification date, consistently in both ZIP headers. DOS ZIP timestamps have two-second precision and support 1980–2107; out-of-range device dates are clamped. Existing downloaded archives retain their old metadata and must be downloaded again.
 - Collage imports up to nine photos and sets the slot count automatically. Exact-count layouts are ranked for the export shape: 1/2/3 photos have 1/2/4 choices; 4/5/6/7/8/9 photos have 9/10/10/12/14/15 choices each. Select fewer slots to keep extras in the unplaced tray.
 - Six collage exports: square 1080×1080, story 1080×1920, portrait 1080×1350, landscape 1800×1200, widescreen 1920×1080 and tall phone 1080×2340. Photos fill their slots with proportional cover cropping. Drag within a slot to reframe, drag onto another slot to swap, or use Move / swap. Zoom uses a slider or two-pointer pinch; borders set the outside frame and inner spacing.
@@ -46,6 +47,7 @@ Open http://127.0.0.1:4173 and choose a tool. The interface uses system fonts an
 - `dist/app.mjs`: batch UI, queue, live previews and mode navigation.
 - `dist/collage.mjs`, `dist/crop-editor.mjs`: collage slot/gesture state and modal crop UI.
 - `dist/photos.mjs`: browser decoding, generated synthetic samples, PNG encoding and Blob URL cleanup.
+- `dist/downloads.mjs`: ordered separate-download requests, with injectable download/timing adapters for deterministic checks; browser policy owns actual completion.
 - `tests/*.test.mjs`: deterministic core, geometry, crop and fake-browser photo-adapter tests.
 - `.openai/hosting.json`: Sites identity and static deployment configuration.
 
@@ -97,6 +99,24 @@ Delivery plan review: import existing source/history → document local setup an
 ## Publishing and recovery
 
 The Sites skill helper packages `dist/` with the hosting manifest, synchronizes source, then deploys a saved version privately. No runtime migrations or persistent data. Recovery: redeploy a previously saved Sites version; original images are never modified. Source changes should use a dedicated branch and focused commits with explanatory bodies. GitHub and Sites keep separate Git repositories. `origin` points to GitHub in the local checkout. The Sites workflow obtains temporary repository access for the Site ID in `.openai/hosting.json`; keep credentials in memory/stdin and never place them in Git. A GitHub push alone does not publish the Site. When publishing is requested, verify the latest Sites source, reconcile any changes, then use the Sites source/package and saved-version deployment workflow. This GitHub import performs no Sites publication or audience change.
+
+## Separate PNG batch downloads
+
+Tracked in [issue #4](https://github.com/JuliaMathias/pairwise/issues/4), stacked on the unmerged editor work in [PR #3](https://github.com/JuliaMathias/pairwise/pull/3). The Save all images button appears beside Download ZIP after successful generation. A 300ms interval avoids flooding the browser with requests; it does not bypass browser restrictions. No new dependencies or architecture changes are needed.
+
+Manual testing is needed for native browser downloads. Prerequisites: serve this revision locally using the setup commands, or open the updated hosted Site in a regular browser; allow multiple downloads for that origin and disable per-file destination prompts if background saving is desired. Use only the built-in synthetic samples, starting with a fresh page.
+
+1. Choose Join images, then Try with sample images. Keep group size 2 and Vertical; open File naming, enter `Save-all-check` and offset `40`, and choose Join images.
+2. Expect two outputs, `Save-all-check-041.png` (300×390) and `Save-all-check-042.png` (290×430).
+3. Click Save all images once. During requests the button and editing controls must be disabled; afterward they must recover and focus must return to Save all images. Expect two separate PNG files in the usual download folder, with the displayed names, and no ZIP from this action. If the browser blocks additional files, allow multiple downloads and retry; expect possible duplicate-name suffixes for the first file already saved.
+4. Download ZIP separately, test archive CRCs and compare both entries byte-for-byte with the separately downloaded PNGs. Individual Download PNG links must still work.
+5. Repeat with group size 3 (including a final partial group), and with group size 4 (one result). Check the controls at a 390px-wide viewport: both actions must remain available with no horizontal overflow.
+
+Pass criteria: every requested output is saved separately with the expected content and naming when the browser permits multiple downloads, editing cannot invalidate an active batch, and ZIP/individual actions still work. Record revision, browser/version, permission settings, actual downloaded file count/names, content comparisons and screenshot; do not record private photos. Cleanup: remove only the named synthetic test downloads if desired, preserving original files.
+
+Execution, 2026-11-23: 24 deterministic Node tests passed, including order/names/blob identity, empty input and adapter-failure handling with fake timing. In the actual in-app browser, the final button requested both numbered downloads, recovered its controls and focus, and saved the first PNG. **Blocked:** the browser saved only the first automatic download, with no visible permission control; neither simultaneous requests nor 300ms spacing made the second automatic save succeed. Therefore complete native batch saving is not claimed as verified. Downloading the second file individually succeeded; both individual PNGs matched the ZIP entries exactly and CRCs passed. At 390px, page width equaled viewport width. Group-size 3/4 native batch downloads and regular Chrome/Safari/Firefox permission flows are not run. Screenshot: [save-all controls](docs/images/save-all.png).
+
+Delivery plan review: implement → deterministic checks → native download and narrow-layout checks → private Sites publication → unmerged stacked review PR. Adjustment: retain the regular-browser multiple-download acceptance gate in issue #4 because the in-app browser only saved the first file; no attempt to bypass browser policy. No CI is configured. Publication status belongs in the PR/issue, not an assumed GitHub deployment.
 
 ## Web editing parity
 
