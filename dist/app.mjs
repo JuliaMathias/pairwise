@@ -4,6 +4,7 @@ import { createCropEditor } from './crop-editor.mjs';
 import { joinComposition } from './composer.mjs';
 import { downloadBlob, encodePng, readPhotos, sampleFiles } from './photos.mjs';
 import { createCollage } from './collage.mjs';
+import { downloadAll } from './downloads.mjs';
 
 const $ = id => document.getElementById(id);
 const groupField = $('group-size');
@@ -11,7 +12,7 @@ const offsetField = $('number-offset');
 const nameField = $('output-name');
 const fileField = $('files');
 const directions = ['vertical', 'horizontal'];
-const busyControls = ['browse', 'sample', 'add', 'clear', 'sort', ...directions, 'group-size', 'output-name', 'number-offset', 'files', 'bundle', 'join-fill', 'join-color', 'join-border', 'join-border-color'];
+const busyControls = ['browse', 'sample', 'add', 'clear', 'sort', ...directions, 'group-size', 'output-name', 'number-offset', 'files', 'bundle', 'save-all', 'join-fill', 'join-color', 'join-border', 'join-border-color'];
 let images = [];
 let outputs = [];
 let direction = 'vertical';
@@ -355,6 +356,25 @@ $('generate').onclick = async () => {
   if (outputs.length) {
     $('results-title').focus({ preventScroll: true });
     $('results').scrollIntoView({ block: 'start' });
+  }
+};
+
+// Browser policy still controls permission/completion; never claim filesystem success.
+$('save-all').onclick = async () => {
+  if (busy || outputs.length === 0) return;
+  setBusy(true);
+  let requested = 0;
+  try {
+    await downloadAll(outputs, { progress(count, total) {
+      requested = count;
+      message(`Requesting PNG download ${count} of ${total}…`);
+    } });
+    message(`Requested ${requested} PNG downloads. If any are missing, allow multiple downloads for this site, then try again.`);
+  } catch {
+    message(`Requested ${requested} PNG downloads before an error. You can still save images individually.`, true);
+  } finally {
+    setBusy(false);
+    $('save-all').focus({ preventScroll: true });
   }
 };
 
